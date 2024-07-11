@@ -367,6 +367,7 @@ void init_gNB_Tpool(int inst)
   // PUSCH symbols per thread need to be calculated by how many threads we have
   gNB->num_pusch_symbols_per_thread = 1;
   // ULSCH decoding threadpool
+  printf("binding CPU core: %s\n", get_softmodem_params()->threadPoolConfig);
   initTpool(get_softmodem_params()->threadPoolConfig, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
   // ULSCH decoder result FIFO
   initNotifiedFIFO(&gNB->respPuschSymb);
