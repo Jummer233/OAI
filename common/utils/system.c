@@ -61,36 +61,42 @@ static int module_initialized = 0;
 /* util functions                                                   */
 /********************************************************************/
 
-static void lock_system(void) {
+static void lock_system(void)
+{
   if (pthread_mutex_lock(&lock) != 0) {
     printf("pthread_mutex_lock fails\n");
     abort();
   }
 }
 
-static void unlock_system(void) {
+static void unlock_system(void)
+{
   if (pthread_mutex_unlock(&lock) != 0) {
     printf("pthread_mutex_unlock fails\n");
     abort();
   }
 }
 
-static void write_pipe(int p, char *b, int size) {
+static void write_pipe(int p, char *b, int size)
+{
   while (size) {
     int ret = write(p, b, size);
 
-    if (ret <= 0) exit(0);
+    if (ret <= 0)
+      exit(0);
 
     b += ret;
     size -= ret;
   }
 }
 
-static void read_pipe(int p, char *b, int size) {
+static void read_pipe(int p, char *b, int size)
+{
   while (size) {
     int ret = read(p, b, size);
 
-    if (ret <= 0) exit(0);
+    if (ret <= 0)
+      exit(0);
 
     b += ret;
     size -= ret;
@@ -106,10 +112,11 @@ static void read_pipe(int p, char *b, int size) {
  * when the main process exits, because then a "read" on the pipe
  * will return 0, in which case "read_pipe" exits.
  */
-static void background_system_process(void) {
+static void background_system_process(void)
+{
   int len;
   int ret;
-  char command[MAX_COMMAND+1];
+  char command[MAX_COMMAND + 1];
 
   while (1) {
     read_pipe(command_pipe_read, (char *)&len, sizeof(int));
@@ -124,7 +131,8 @@ static void background_system_process(void) {
 /*     return -1 on error, 0 on success                             */
 /********************************************************************/
 
-int background_system(char *command) {
+int background_system(char *command)
+{
   int res;
   int len;
 
@@ -133,7 +141,7 @@ int background_system(char *command) {
     abort();
   }
 
-  len = strlen(command)+1;
+  len = strlen(command) + 1;
 
   if (len > MAX_COMMAND) {
     printf("FATAL: command too long. Increase MAX_COMMAND (%d).\n", MAX_COMMAND);
@@ -148,7 +156,8 @@ int background_system(char *command) {
   read_pipe(result_pipe_read, (char *)&res, sizeof(int));
   unlock_system();
 
-  if (res == -1 || !WIFEXITED(res) || WEXITSTATUS(res) != 0) return -1;
+  if (res == -1 || !WIFEXITED(res) || WEXITSTATUS(res) != 0)
+    return -1;
 
   return 0;
 }
@@ -159,7 +168,8 @@ int background_system(char *command) {
 /*     to be called very early by the main processing               */
 /********************************************************************/
 
-void start_background_system(void) {
+void start_background_system(void)
+{
   int p[2];
   pid_t son;
 
@@ -173,7 +183,7 @@ void start_background_system(void) {
     exit(1);
   }
 
-  command_pipe_read  = p[0];
+  command_pipe_read = p[0];
   command_pipe_write = p[1];
 
   if (pipe(p) == -1) {
@@ -181,7 +191,7 @@ void start_background_system(void) {
     exit(1);
   }
 
-  result_pipe_read  = p[0];
+  result_pipe_read = p[0];
   result_pipe_write = p[1];
   son = fork();
 
@@ -201,13 +211,13 @@ void start_background_system(void) {
   background_system_process();
 }
 
-int rt_sleep_ns (uint64_t x)
+int rt_sleep_ns(uint64_t x)
 {
   struct timespec myTime;
   clock_gettime(CLOCK_MONOTONIC, &myTime);
-  myTime.tv_sec += x/1000000000ULL;
-  myTime.tv_nsec = x%1000000000ULL;
-  if (myTime.tv_nsec>=1000000000) {
+  myTime.tv_sec += x / 1000000000ULL;
+  myTime.tv_nsec = x % 1000000000ULL;
+  if (myTime.tv_nsec >= 1000000000) {
     myTime.tv_nsec -= 1000000000;
     myTime.tv_sec++;
   }
@@ -236,7 +246,7 @@ bool has_cap_sys_nice(void)
  * the man page: "The portable interfaces are cap_set_proc(3) and
  * cap_get_proc(3); if possible, you should use those interfaces in
  * applications". */
-#include <sys/syscall.h>      /* Definition of SYS_* constants */
+#include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <linux/capability.h> /* capabilities used below */
 /* \brief reports if the current thread has capability CAP_SYS_NICE, i.e. */
 bool has_cap_sys_nice(void)
@@ -249,13 +259,13 @@ bool has_cap_sys_nice(void)
 }
 #endif
 
-void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority)
+void threadCreate(pthread_t *t, void *(*func)(void *), void *param, char *name, int affinity, int priority)
 {
   int ret;
   bool set_prio = has_cap_sys_nice();
 
   pthread_attr_t attr;
-  ret=pthread_attr_init(&attr);
+  ret = pthread_attr_init(&attr);
   AssertFatal(ret == 0, "Error in pthread_attr_init(): ret: %d, errno: %d\n", ret, errno);
 
   if (set_prio) {
@@ -280,11 +290,11 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     LOG_I(UTIL, "%s() for %s: creating thread (no affinity, default priority)\n", __func__, name);
   }
 
-  ret=pthread_create(t, &attr, func, param);
+  ret = pthread_create(t, &attr, func, param);
   AssertFatal(ret == 0, "Error in pthread_create(): ret: %d, errno: %d\n", ret, errno);
-  
+
   pthread_setname_np(*t, name);
-  if (affinity != -1 ) {
+  if (affinity != -1) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(affinity, &cpuset);
@@ -296,12 +306,8 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
 
 // Legacy, pthread_create + thread_top_init() should be replaced by threadCreate
 // threadCreate encapsulates the posix pthread api
-void thread_top_init(char *thread_name,
-		     int affinity,
-		     uint64_t runtime,
-		     uint64_t deadline,
-		     uint64_t period) {
-  
+void thread_top_init(char *thread_name, int affinity, uint64_t runtime, uint64_t deadline, uint64_t period)
+{
   int policy, s, j;
   struct sched_param sparam;
   char cpu_affinity[1024];
@@ -316,18 +322,15 @@ void thread_top_init(char *thread_name,
 
   /* Check the actual affinity mask assigned to the thread */
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-    perror( "pthread_getaffinity_np");
+  if (s != 0) {
+    perror("pthread_getaffinity_np");
     exit_fun("Error getting processor affinity ");
   }
-  memset(cpu_affinity,0,sizeof(cpu_affinity));
-  for (j = 0; j < 1024; j++)
-  {
-    if (CPU_ISSET(j, &cpuset))
-    {  
+  memset(cpu_affinity, 0, sizeof(cpu_affinity));
+  for (j = 0; j < 1024; j++) {
+    if (CPU_ISSET(j, &cpuset)) {
       char temp[1024];
-      sprintf (temp, " CPU_%d", j);
+      sprintf(temp, " CPU_%d", j);
       strcat(cpu_affinity, temp);
     }
   }
@@ -336,13 +339,13 @@ void thread_top_init(char *thread_name,
     memset(&sparam, 0, sizeof(sparam));
     sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
     policy = SCHED_FIFO;
-  
+
     s = pthread_setschedparam(pthread_self(), policy, &sparam);
     if (s != 0) {
       perror("pthread_setschedparam : ");
       exit_fun("Error setting thread priority");
     }
-  
+
     s = pthread_getschedparam(pthread_self(), &policy, &sparam);
     if (s != 0) {
       perror("pthread_getschedparam : ");
@@ -351,12 +354,16 @@ void thread_top_init(char *thread_name,
 
     pthread_setname_np(pthread_self(), thread_name);
 
-    LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
-                     (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-                     (policy == SCHED_RR)    ? "SCHED_RR" :
-                     (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-                     "???",
-                     sparam.sched_priority, cpu_affinity );
+    LOG_I(HW,
+          "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",
+          thread_name,
+          sched_getcpu(),
+          (policy == SCHED_FIFO)    ? "SCHED_FIFO"
+          : (policy == SCHED_RR)    ? "SCHED_RR"
+          : (policy == SCHED_OTHER) ? "SCHED_OTHER"
+                                    : "???",
+          sparam.sched_priority,
+          cpu_affinity);
   }
 }
 
