@@ -439,6 +439,14 @@ void print_opp_meas(void)
   }
 }
 
+void L1_thread_control()
+{
+  while (true) {
+    printf("sad\n");
+    sleep(2);
+  }
+}
+
 /// eNB kept in function name for nffapi calls, TO FIX
 void init_eNB_afterRU(void)
 {
@@ -480,6 +488,9 @@ void init_eNB_afterRU(void)
      */
     // init_precoding_weights(RC.gNB[inst]);
     init_gNB_Tpool(inst);
+
+    // add thread of CPU_control here
+    threadCreate(&L1_cpu_control_thread, L1_thread_control, (void *)gNB, "L1_thread_control", 8, OAI_PRIORITY_RT_MAX);
   }
 }
 
