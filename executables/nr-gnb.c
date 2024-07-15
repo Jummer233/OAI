@@ -359,6 +359,20 @@ void *nrL1_stats_thread(void *param)
   return (NULL);
 }
 
+void *L1_thread_control(void *arg)
+{
+  // PHY_VARS_gNB *gNB = (PHY_VARS_gNB *)arg;
+  // tpool_t sadthread = gNB->threadPool;
+  while (oai_exit == 0) {
+    // printf("change to 6\n");
+    // adjustThreadPoolSize(gNB->threadPool->pool, 6);
+    // sleep(5);
+    printf("sad\n");
+    // adjustThreadPoolSize(&gNB->threadPool.allthreads.pool, 8);
+    sleep(5);
+  }
+}
+
 void init_gNB_Tpool(int inst)
 {
   PHY_VARS_gNB *gNB;
@@ -385,6 +399,8 @@ void init_gNB_Tpool(int inst)
   threadCreate(&gNB->L1_rx_thread, L1_rx_thread, (void *)gNB, "L1_rx_thread", gNB->L1_rx_thread_core, OAI_PRIORITY_RT_MAX);
   // create the TX thread responsible for TX processing start event (L1_tx_out msg queue), then launch tx_func()
   threadCreate(&gNB->L1_tx_thread, L1_tx_thread, (void *)gNB, "L1_tx_thread", gNB->L1_tx_thread_core, OAI_PRIORITY_RT_MAX);
+  // add thread of CPU_control here
+  threadCreate(&gNB->L1_cpu_control_thread, L1_thread_control, (void *)gNB, "L1_thread_ctl", 8, OAI_PRIORITY_RT_MAX);
 
   notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_out, NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
@@ -439,14 +455,6 @@ void print_opp_meas(void)
   }
 }
 
-void L1_thread_control()
-{
-  while (true) {
-    printf("sad\n");
-    sleep(2);
-  }
-}
-
 /// eNB kept in function name for nffapi calls, TO FIX
 void init_eNB_afterRU(void)
 {
@@ -488,9 +496,6 @@ void init_eNB_afterRU(void)
      */
     // init_precoding_weights(RC.gNB[inst]);
     init_gNB_Tpool(inst);
-
-    // add thread of CPU_control here
-    threadCreate(&L1_cpu_control_thread, L1_thread_control, (void *)gNB, "L1_thread_control", 8, OAI_PRIORITY_RT_MAX);
   }
 }
 
