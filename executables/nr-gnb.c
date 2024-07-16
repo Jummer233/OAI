@@ -97,6 +97,7 @@ time_stats_t nfapi_meas; // total tx time
 time_stats_t softmodem_stats_rx_sf; // total rx time
 
 #include "executables/thread-common.h"
+#include "../../../common/utils/threadPool/thread-pool.c"
 
 // #define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials == 0 ? 0 : ts.diff / ts.trials)
@@ -361,16 +362,28 @@ void *nrL1_stats_thread(void *param)
 
 void *L1_thread_control(void *arg)
 {
-  // PHY_VARS_gNB *gNB = (PHY_VARS_gNB *)arg;
+  PHY_VARS_gNB *gNB = (PHY_VARS_gNB *)arg;
   // tpool_t sadthread = gNB->threadPool;
   while (oai_exit == 0) {
-    // printf("change to 6\n");
-    // adjustThreadPoolSize(gNB->threadPool->pool, 6);
-    // sleep(5);
-    printf("sad\n");
-    // adjustThreadPoolSize(&gNB->threadPool.allthreads.pool, 8);
+    // Sleep 7 threads
+    struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
+    printf("change to 1 cpus\n");
+    for (int i = 0; i < 7 && current != NULL; i++) {
+      sleepThread(current);
+      printf("sleep thread name: %s\n", current->name);
+      current = current->next;
+    }
+    sleep(5);
+    printf("change to 8 cpus\n");
+    current = gNB->threadPool.allthreads->pool->allthreads;
+    for (int i = 0; i < 7 && current != NULL; i++) {
+      wakeThread(current);
+      printf("sleep thread name: %s\n", current->name);
+      current = current->next;
+    }
     sleep(5);
   }
+  return NULL;
 }
 
 void init_gNB_Tpool(int inst)

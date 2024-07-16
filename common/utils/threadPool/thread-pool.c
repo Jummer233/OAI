@@ -77,6 +77,12 @@ void *one_thread(void *arg)
 
   // Infinite loop to process requests
   do {
+    pthread_mutex_lock(&myThread->sleepMutex);
+    while (myThread->sleeping) {
+      pthread_cond_wait(&myThread->sleepCond, &myThread->sleepMutex);
+    }
+    pthread_mutex_unlock(&myThread->sleepMutex);
+
     notifiedFIFO_elt_t *elt = pullNotifiedFifoRemember(&tp->incomingFifo, myThread);
     if (elt == NULL) {
       AssertFatal(myThread->terminate, "pullNotifiedFifoRemember() returned NULL although thread not aborted\n");
@@ -147,6 +153,9 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
         pool->allthreads->pool = pool;
         pool->allthreads->dropJob = false;
         pool->allthreads->terminate = false;
+        pool->allthreads->sleeping = false; // Initialize sleeping flag
+        pthread_mutex_init(&pool->allthreads->sleepMutex, NULL); // Initialize mutex
+        pthread_cond_init(&pool->allthreads->sleepCond, NULL); // Initialize condition variable
         // Configure the thread scheduler policy for Linux
         //  set the thread name for debugging
         sprintf(pool->allthreads->name, "%s%d_%d", tname, pool->nbThreads, pool->allthreads->coreID);
@@ -169,6 +178,21 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
     printf("No servers created in the thread pool, exit\n");
     exit(1);
   }
+}
+
+void sleepThread(struct one_thread *thread)
+{
+  pthread_mutex_lock(&thread->sleepMutex);
+  thread->sleeping = true;
+  pthread_mutex_unlock(&thread->sleepMutex);
+}
+
+void wakeThread(struct one_thread *thread)
+{
+  pthread_mutex_lock(&thread->sleepMutex);
+  thread->sleeping = false;
+  pthread_cond_signal(&thread->sleepCond);
+  pthread_mutex_unlock(&thread->sleepMutex);
 }
 
 void initFloatingCoresTpool(int nbThreads, tpool_t *pool, bool performanceMeas, char *name)

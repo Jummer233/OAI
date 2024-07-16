@@ -262,6 +262,9 @@ struct one_thread {
   bool terminate;
   struct thread_pool *pool;
   struct one_thread *next;
+  bool sleeping; // New flag to indicate if the thread is sleeping
+  pthread_mutex_t sleepMutex; // Mutex for sleep condition
+  pthread_cond_t sleepCond; // Condition variable for sleep/wake up
 };
 
 typedef struct thread_pool {
