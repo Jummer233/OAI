@@ -53,7 +53,6 @@ typedef struct {
   int lut[MAX_PUCCH0_NID][160][14];
 } NR_gNB_PUCCH0_LUT_t;
 
-
 typedef struct {
   uint32_t pbch_a;
   uint32_t pbch_a_interleaved;
@@ -61,14 +60,7 @@ typedef struct {
   uint32_t pbch_e[NR_POLAR_PBCH_E_DWORD];
 } NR_gNB_PBCH;
 
-
-typedef enum {
-  NR_SCH_IDLE,
-  NR_ACTIVE,
-  NR_CBA_ACTIVE,
-  NR_DISABLED
-} NR_SCH_status_t;
-
+typedef enum { NR_SCH_IDLE, NR_ACTIVE, NR_CBA_ACTIVE, NR_DISABLED } NR_SCH_status_t;
 
 typedef struct {
   /// Nfapi DLSCH PDU
@@ -158,7 +150,7 @@ typedef struct {
 typedef struct {
   int frame;
   int slot;
-  nfapi_nr_prach_pdu_t pdu;  
+  nfapi_nr_prach_pdu_t pdu;
 } gNB_PRACH_list_t;
 
 #define NUMBER_OF_NR_PRACH_MAX 8
@@ -313,11 +305,10 @@ typedef struct {
   /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
   /// - first index: antenna port
   /// - second index: beam_id [0.. symbols_per_frame[
-  uint8_t **beam_id;  
+  uint8_t **beam_id;
   int32_t *debugBuff;
   int32_t debugBuff_sample_offset;
 } NR_gNB_COMMON;
-
 
 typedef struct {
   /// \brief Holds the received data in the frequency domain for the allocated RBs in repeated format.
@@ -381,7 +372,7 @@ typedef struct {
 /// Context data structure for RX/TX portion of slot processing
 typedef struct {
   /// Component Carrier index
-  uint8_t              CC_id;
+  uint8_t CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   /// slot to act upon for transmission
@@ -416,11 +407,10 @@ typedef struct {
   pthread_mutex_t mutex_RUs_tx;
 } gNB_L1_rxtx_proc_t;
 
-
 /// Context data structure for eNB slot processing
 typedef struct gNB_L1_proc_t_s {
   /// Component Carrier index
-  uint8_t              CC_id;
+  uint8_t CC_id;
   /// thread index
   int thread_index;
   /// timestamp received from HW
@@ -505,11 +495,11 @@ typedef struct gNB_L1_proc_t_s {
 typedef struct {
   // common measurements
   //! estimated noise power (linear)
-  unsigned int   n0_power[MAX_NUM_RU_PER_gNB];
+  unsigned int n0_power[MAX_NUM_RU_PER_gNB];
   //! estimated noise power (dB)
   unsigned int n0_power_dB[MAX_NUM_RU_PER_gNB];
   //! total estimated noise power (linear)
-  unsigned int   n0_power_tot;
+  unsigned int n0_power_tot;
   //! estimated avg noise power (dB)
   unsigned int n0_power_tot_dB;
   //! estimated avg noise power per RB per RX ant (lin)
@@ -525,10 +515,9 @@ typedef struct {
   //! estimated avg noise power per RB (dBm)
   int n0_subband_power_tot_dBm[275];
   /// PRACH background noise level
-  int            prach_I0;
+  int prach_I0;
 
 } PHY_MEASUREMENTS_gNB;
-
 
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_UL_PDUS_PER_SLOT 8
@@ -541,29 +530,29 @@ typedef struct {
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {
   /// Module ID indicator for this instance
-  module_id_t          Mod_id;
-  uint8_t              CC_id;
-  uint8_t              configured;
-  gNB_L1_proc_t        proc;
-  int                  single_thread_flag;
-  int                  abstraction_flag;
-  int                  num_RU;
-  RU_t                 *RU_list[MAX_NUM_RU_PER_gNB];
+  module_id_t Mod_id;
+  uint8_t CC_id;
+  uint8_t configured;
+  gNB_L1_proc_t proc;
+  int single_thread_flag;
+  int abstraction_flag;
+  int num_RU;
+  RU_t *RU_list[MAX_NUM_RU_PER_gNB];
   /// Ethernet parameters for northbound midhaul interface
-  eth_params_t         eth_params_n;
+  eth_params_t eth_params_n;
   /// Ethernet parameters for fronthaul interface
-  eth_params_t         eth_params;
-  int                  rx_total_gain_dB;
-  int                  (*nr_start_if)(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB);
-  uint8_t              local_flag;
-  nfapi_nr_config_request_scf_t  gNB_config;
-  NR_DL_FRAME_PARMS    frame_parms;
+  eth_params_t eth_params;
+  int rx_total_gain_dB;
+  int (*nr_start_if)(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB);
+  uint8_t local_flag;
+  nfapi_nr_config_request_scf_t gNB_config;
+  NR_DL_FRAME_PARMS frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
-  NR_IF_Module_t       *if_inst;
-  NR_UL_IND_t          UL_INFO;
+  NR_IF_Module_t *if_inst;
+  NR_UL_IND_t UL_INFO;
 
   /// NFAPI RX ULSCH information
-  nfapi_nr_rx_data_pdu_t  rx_pdu_list[MAX_UL_PDUS_PER_SLOT];
+  nfapi_nr_rx_data_pdu_t rx_pdu_list[MAX_UL_PDUS_PER_SLOT];
   /// NFAPI RX ULSCH CRC information
   nfapi_nr_crc_t crc_pdu_list[MAX_UL_PDUS_PER_SLOT];
   /// NFAPI SRS information
@@ -573,24 +562,24 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_nr_prach_indication_pdu_t prach_pdu_indication_list[MAX_NUM_NR_RX_RACH_PDUS];
 
-  nfapi_nr_ul_tti_request_t     UL_tti_req;
+  nfapi_nr_ul_tti_request_t UL_tti_req;
   nfapi_nr_uci_indication_t uci_indication;
-  
+
   int max_nb_pucch;
   int max_nb_srs;
   int max_nb_pdsch;
   int max_nb_pusch;
 
-  NR_gNB_PBCH        pbch;
-  NR_gNB_COMMON      common_vars;
-  NR_gNB_PRACH       prach_vars;
-  NR_gNB_PRS         prs_vars;
+  NR_gNB_PBCH pbch;
+  NR_gNB_COMMON common_vars;
+  NR_gNB_PRACH prach_vars;
+  NR_gNB_PRS prs_vars;
   NR_gNB_PUSCH *pusch_vars;
   NR_gNB_PUCCH_t *pucch;
   NR_gNB_SRS_t *srs;
   NR_gNB_ULSCH_t *ulsch;
   NR_gNB_PHY_STATS_t phy_stats[MAX_MOBILES_PER_GNB];
-  t_nrPolar_params    **polarParams;
+  t_nrPolar_params **polarParams;
 
   /// SRS variables
   nr_srs_info_t **nr_srs_info;
@@ -675,7 +664,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t tprep;
   time_stats_t tparity;
   time_stats_t toutput;
-  
+
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_interleaving_stats;
   time_stats_t dlsch_segmentation_stats;
@@ -718,16 +707,17 @@ typedef struct PHY_VARS_gNB_s {
   int L1_rx_thread_core;
   pthread_t L1_tx_thread;
   int L1_tx_thread_core;
+  pthread_t L1_cpu_control_thread;
   struct processingData_L1tx *msgDataTx;
   void *scopeData;
   /// structure for analyzing high-level RT measurements
-  rt_L1_profiling_t rt_L1_profiling; 
+  rt_L1_profiling_t rt_L1_profiling;
 } PHY_VARS_gNB;
 
 struct puschSymbolReqId {
   uint16_t ulsch_id;
   uint16_t frame;
-  uint8_t  slot;
+  uint8_t slot;
   uint16_t spare;
 } __attribute__((packed));
 
@@ -741,7 +731,7 @@ typedef struct LDPCDecode_s {
   NR_UL_gNB_HARQ_t *ulsch_harq;
   t_nrLDPC_dec_params decoderParms;
   NR_gNB_ULSCH_t *ulsch;
-  short* ulsch_llr; 
+  short *ulsch_llr;
   int ulsch_id;
   int harq_pid;
   int rv_index;
@@ -761,8 +751,8 @@ typedef struct LDPCDecode_s {
 struct ldpcReqId {
   uint16_t rnti;
   uint16_t frame;
-  uint8_t  subframe;
-  uint8_t  codeblock;
+  uint8_t subframe;
+  uint8_t codeblock;
   uint16_t spare;
 } __attribute__((packed));
 
@@ -778,11 +768,7 @@ typedef struct processingData_L1 {
   PHY_VARS_gNB *gNB;
 } processingData_L1_t;
 
-typedef enum {
-  FILLED,
-  FILLING,
-  NOT_FILLED
-} msgStatus_t;
+typedef enum { FILLED, FILLING, NOT_FILLED } msgStatus_t;
 
 typedef struct processingData_L1tx {
   int frame;
