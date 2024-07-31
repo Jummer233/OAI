@@ -426,6 +426,13 @@ void init_gNB_Tpool(int inst)
   if ((!get_softmodem_params()->emulate_l1) && (!IS_SOFTMODEM_NOSTATS_BIT) && (NFAPI_MODE != NFAPI_MODE_VNF)
       && (NFAPI_MODE != NFAPI_MODE_AERIAL))
     threadCreate(&proc->L1_stats_thread, nrL1_stats_thread, (void *)gNB, "L1_stats", -1, OAI_PRIORITY_RT_LOW);
+
+  // 开始记录时间戳
+  FILE *fd;
+  fd = fopen("nrL1_timestep.log", "a");
+  fprintf(fd, "start record timestamp\n");
+  fflush(fd);
+  fclose(fd);
 }
 
 void term_gNB_Tpool(int inst)
