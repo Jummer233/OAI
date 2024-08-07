@@ -369,21 +369,43 @@ void *L1_thread_control(void *arg)
     struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
     printf("change to 1 cpus\n");
     for (int i = 0; i < 7 && current != NULL; i++) {
-      sleepThread(current);
-      printf("sleep thread name: %s\n", current->name);
-      current = current->next;
+      sleep_single_thread(gNB, i);
+      // sleepThread(current);
+      // printf("sleep thread name: %s\n", current->name);
+      // current = current->next;
     }
     sleep(5);
     printf("change to 8 cpus\n");
     current = gNB->threadPool.allthreads->pool->allthreads;
     for (int i = 0; i < 7 && current != NULL; i++) {
-      wakeThread(current);
-      printf("sleep thread name: %s\n", current->name);
-      current = current->next;
+      wake_single_thread(gNB, i);
+      // wakeThread(current);
+      // printf("sleep thread name: %s\n", current->name);
+      // current = current->next;
     }
     sleep(5);
   }
   return NULL;
+}
+
+void sleep_single_thread(PHY_VARS_gNB *gNB, int thread_id)
+{
+  struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
+  for (int i = 0; i < thread_id && current != NULL; i++) {
+    current = current->next;
+  }
+  sleepThread(current);
+  printf("sleep thread name: %s\n", current->name);
+}
+
+void wake_single_thread(PHY_VARS_gNB *gNB, int thread_id)
+{
+  struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
+  for (int i = 0; i < thread_id && current != NULL; i++) {
+    current = current->next;
+  }
+  wakeThread(current);
+  printf("wake thread name: %s\n", current->name);
 }
 
 void init_gNB_Tpool(int inst)
