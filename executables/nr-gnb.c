@@ -103,6 +103,8 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 #define TICK_TO_US(ts) (ts.trials == 0 ? 0 : ts.diff / ts.trials)
 #define L1STATSSTRLEN 16384
 static void rx_func(processingData_L1_t *param);
+void sleep_single_thread(PHY_VARS_gNB *gNB, int thread_id);
+void wake_single_thread(PHY_VARS_gNB *gNB, int thread_id);
 
 static void tx_func(processingData_L1tx_t *info)
 {
