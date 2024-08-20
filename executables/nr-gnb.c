@@ -419,7 +419,8 @@ void init_gNB_Tpool(int inst)
   gNB->num_pusch_symbols_per_thread = 1;
   // ULSCH decoding threadpool
   printf("binding CPU core: %s\n", get_softmodem_params()->threadPoolConfig);
-  initTpool(get_softmodem_params()->threadPoolConfig, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
+  // initTpool(get_softmodem_params()->threadPoolConfig, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
+  initTpool(get_softmodem_params()->threadPoolConfig, &gNB->threadPool, true);
   // ULSCH decoder result FIFO
   initNotifiedFIFO(&gNB->respPuschSymb);
   initNotifiedFIFO(&gNB->respDecode);

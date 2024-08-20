@@ -75,6 +75,10 @@ void *one_thread(void *arg)
   struct one_thread *myThread = (struct one_thread *)arg;
   struct thread_pool *tp = myThread->pool;
 
+  uint64_t deb = rdtsc_oai();
+  usleep(100000);
+  uint64_t cpuCyclesMicroSec = (rdtsc_oai() - deb) / 100000;
+
   // Infinite loop to process requests
   do {
     pthread_mutex_lock(&myThread->sleepMutex);
@@ -96,6 +100,20 @@ void *one_thread(void *arg)
 
     if (tp->measurePerf)
       elt->endProcessingTime = rdtsc_oai();
+
+    // display record
+    if (myThread->coreID != -1) {
+      printf(
+          "key: %lu"
+          "\t"
+          "waiting time: %lu"
+          "\t"
+          "processing time: %lu"
+          "\n",
+          elt->key,
+          (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
+          (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
+    }
 
     if (elt->reponseFifo) {
       // Check if the job is still alive, else it has been aborted
