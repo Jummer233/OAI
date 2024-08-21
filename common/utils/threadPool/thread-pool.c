@@ -70,6 +70,42 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember(notifiedFIFO_t *nf, s
   return ret;
 }
 
+static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t *nf,
+                                                                 struct one_thread *thr,
+                                                                 const uint64_t cpuCyclesMicroSec)
+{
+  mutexlock(nf->lockF);
+
+  while (!nf->outF && !thr->terminate)
+    condwait(nf->notifF, nf->lockF);
+
+  if (thr->terminate) {
+    mutexunlock(nf->lockF);
+    return NULL;
+  }
+
+  notifiedFIFO_elt_t *ret = nf->outF;
+  nf->outF = nf->outF->next;
+  // add timestamp here
+  oai_cputime_t last_pull_time = rdtsc_oai();
+
+  if (nf->last_pull_time != 0) {
+    printf("last pull time used: %lu us\n", (last_pull_time - nf->last_pull_time) / cpuCyclesMicroSec);
+    nf->last_pull_time = last_pull_time;
+  } else {
+    nf->last_pull_time = last_pull_time;
+  }
+
+  if (nf->outF == NULL)
+    nf->inF = NULL;
+
+  // For abort feature
+  thr->runningOnKey = ret->key;
+  thr->dropJob = false;
+  mutexunlock(nf->lockF);
+  return ret;
+}
+
 void *one_thread(void *arg)
 {
   struct one_thread *myThread = (struct one_thread *)arg;
@@ -87,7 +123,13 @@ void *one_thread(void *arg)
     }
     pthread_mutex_unlock(&myThread->sleepMutex);
 
-    notifiedFIFO_elt_t *elt = pullNotifiedFifoRemember(&tp->incomingFifo, myThread);
+    notifiedFIFO_elt_t *elt = NULL;
+    if (myThread->coreID != -1) {
+      // To make sure print the pdsch task
+      elt = pullNotifiedFifoRemember_pdsch(&tp->incomingFifo, myThread, cpuCyclesMicroSec);
+    } else {
+      elt = pullNotifiedFifoRemember(&tp->incomingFifo, myThread);
+    }
     if (elt == NULL) {
       AssertFatal(myThread->terminate, "pullNotifiedFifoRemember() returned NULL although thread not aborted\n");
       break;
@@ -102,18 +144,18 @@ void *one_thread(void *arg)
       elt->endProcessingTime = rdtsc_oai();
 
     // display record
-    if (myThread->coreID != -1) {
-      printf(
-          "key: %lu"
-          "\t"
-          "waiting time: %lu"
-          "\t"
-          "processing time: %lu"
-          "\n",
-          elt->key,
-          (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
-          (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
-    }
+    // if (myThread->coreID != -1) {
+    //   printf(
+    //       "key: %lu"
+    //       "\t"
+    //       "waiting time: %lu"
+    //       "\t"
+    //       "processing time: %lu"
+    //       "\n",
+    //       elt->key,
+    //       (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
+    //       (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
+    // }
 
     if (elt->reponseFifo) {
       // Check if the job is still alive, else it has been aborted
