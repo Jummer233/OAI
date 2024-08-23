@@ -99,8 +99,8 @@ typedef struct notifiedFIFO_s {
   pthread_cond_t notifF;
   bool abortFIFO; // if set, the FIFO always returns NULL -> abort condition
   oai_cputime_t last_pull_time;
-  oai_cputime_t pull_time_record[500];
-  // TODO add the array to storage the timestamp
+  oai_cputime_t pull_time_record[50];
+  int pull_time_record_index;
 } notifiedFIFO_t;
 
 // You can use this allocator or use any piece of memory
@@ -143,6 +143,7 @@ static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf)
   nf->outF = NULL;
   nf->abortFIFO = false;
   nf->last_pull_time = 0;
+  nf->pull_time_record_index = 0;
 }
 static inline void initNotifiedFIFO(notifiedFIFO_t *nf)
 {

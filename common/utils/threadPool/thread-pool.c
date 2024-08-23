@@ -90,7 +90,31 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
   oai_cputime_t last_pull_time = rdtsc_oai();
 
   if (nf->last_pull_time != 0) {
-    printf("last pull time used: %lu us\n", (last_pull_time - nf->last_pull_time) / cpuCyclesMicroSec);
+    // printf("last pull time used: %lu us\n", (last_pull_time - nf->last_pull_time) / cpuCyclesMicroSec);
+    nf->pull_time_record[nf->pull_time_record_index++] = (last_pull_time - nf->last_pull_time) / cpuCyclesMicroSec;
+    // write into file if the length of array is nearly full
+    if (nf->pull_time_record_index >= 40) {
+      // Open the file in write mode
+      FILE *file = fopen("time_stamp.log", "a");
+
+      // Check if the file was successfully opened
+      if (file == NULL) {
+        perror("Error opening file");
+        return;
+      }
+
+      // Iterate over the array and write each element to the file
+      for (int i = 0; i < nf->pull_time_record_index; i++) {
+        fprintf(file, "%lu\n", nf->pull_time_record[i]);
+      }
+
+      // Close the file
+      fclose(file);
+
+      // Clear the array by setting all elements to 0
+      memset(nf->pull_time_record, 0, sizeof(oai_cputime_t) * 50);
+      nf->pull_time_record_index = 0;
+    }
     nf->last_pull_time = last_pull_time;
   } else {
     nf->last_pull_time = last_pull_time;
@@ -229,6 +253,7 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
                      pool->allthreads->coreID,
                      OAI_PRIORITY_RT_MAX);
         pool->nbThreads++;
+        FILE *file = fopen("time_stamp.log", "w");
     }
 
     curptr = strtok_r(NULL, ",", &saveptr);
