@@ -85,17 +85,16 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
   }
 
   notifiedFIFO_elt_t *ret = nf->outF;
-  nf->outF = nf->outF->next;
   // add timestamp here
-  oai_cputime_t last_pull_time = rdtsc_oai();
 
-  if (nf->last_pull_time != 0) {
-    // printf("last pull time used: %lu us\n", (last_pull_time - nf->last_pull_time) / cpuCyclesMicroSec);
-    nf->pull_time_record[nf->pull_time_record_index++] = (last_pull_time - nf->last_pull_time) / cpuCyclesMicroSec;
+  if (ret->task_id != -1) {
+    oai_cputime_t pull_time = rdtsc_oai();
+    nf->pull_time_record[nf->pull_time_record_index] = pull_time;
+    nf->pull_taskid_record[nf->pull_time_record_index++] = ret->task_id;
     // write into file if the length of array is nearly full
-    if (nf->pull_time_record_index >= 40) {
+    if (nf->pull_time_record_index >= LOG_RECORD_LENGTH - 10) {
       // Open the file in write mode
-      FILE *file = fopen("time_stamp.log", "a");
+      FILE *file = fopen("queue_stamp.log", "a");
 
       // Check if the file was successfully opened
       if (file == NULL) {
@@ -104,8 +103,18 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
       }
 
       // Iterate over the array and write each element to the file
-      for (int i = 0; i < nf->pull_time_record_index; i++) {
-        fprintf(file, "%lu\n", nf->pull_time_record[i]);
+      fprintf(file,
+              "taskid: %llu \t pull time:%lu \t last pull time: %lu\n",
+              nf->pull_taskid_record[1],
+              nf->pull_time_record[1] / cpuCyclesMicroSec,
+              (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
+      for (int i = 2; i < nf->pull_time_record_index; i++) {
+        // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
+        fprintf(file,
+                "taskid: %llu \t pull time:%lu \t last pull time: %lu\n",
+                nf->pull_taskid_record[i],
+                nf->pull_time_record[i] / cpuCyclesMicroSec,
+                (nf->pull_time_record[i] - nf->pull_time_record[i - 1]) / cpuCyclesMicroSec);
       }
 
       // Close the file
@@ -114,11 +123,13 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
       // Clear the array by setting all elements to 0
       memset(nf->pull_time_record, 0, sizeof(oai_cputime_t) * 50);
       nf->pull_time_record_index = 0;
+      // 这里是为了计算差值的时候，如果清空数组不会出现计算不出差值的情况
+      nf->pull_time_record[nf->pull_time_record_index] = pull_time;
+      nf->pull_taskid_record[nf->pull_time_record_index++] = ret->task_id;
     }
-    nf->last_pull_time = last_pull_time;
-  } else {
-    nf->last_pull_time = last_pull_time;
   }
+
+  nf->outF = nf->outF->next;
 
   if (nf->outF == NULL)
     nf->inF = NULL;
@@ -168,18 +179,40 @@ void *one_thread(void *arg)
       elt->endProcessingTime = rdtsc_oai();
 
     // display record
-    // if (myThread->coreID != -1) {
-    //   printf(
-    //       "key: %lu"
-    //       "\t"
-    //       "waiting time: %lu"
-    //       "\t"
-    //       "processing time: %lu"
-    //       "\n",
-    //       elt->key,
-    //       (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
-    //       (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
-    // }
+    if (myThread->coreID != -1) {
+      FILE *file = fopen("task_stamp.log", "a");
+      fprintf(file,
+              "taskid: %lu"
+              "\t"
+              "start processing time: %lu"
+              "\t"
+              "creation time: %lu"
+              "\t"
+              "end processing time: %lu"
+              "\t"
+              "waiting time: %lu"
+              "\t"
+              "processing time: %lu"
+              "\n",
+              elt->task_id,
+              elt->startProcessingTime / cpuCyclesMicroSec,
+              elt->creationTime / cpuCyclesMicroSec,
+              elt->endProcessingTime / cpuCyclesMicroSec,
+              (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
+              (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
+      fclose(file);
+
+      // printf(
+      //     "taskid: %lu"
+      //     "\t"
+      //     "waiting time: %lu"
+      //     "\t"
+      //     "processing time: %lu"
+      //     "\n",
+      //     elt->task_id,
+      //     (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
+      //     (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
+    }
 
     if (elt->reponseFifo) {
       // Check if the job is still alive, else it has been aborted
@@ -253,9 +286,12 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
                      pool->allthreads->coreID,
                      OAI_PRIORITY_RT_MAX);
         pool->nbThreads++;
-        FILE *file = fopen("time_stamp.log", "w");
     }
 
+    FILE *file_temp1 = fopen("queue_stamp.log", "w");
+    FILE *file_temp2 = fopen("task_stamp.log", "w");
+    fclose(file_temp1);
+    fclose(file_temp2);
     curptr = strtok_r(NULL, ",", &saveptr);
   }
   free(parms_cpy);

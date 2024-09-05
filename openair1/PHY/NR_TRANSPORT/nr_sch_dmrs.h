@@ -49,4 +49,6 @@ uint16_t get_dmrs_freq_idx(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t d
 
 uint8_t get_l0(uint16_t dlDmrsSymbPos);
 
+static long long int ulsch_demodulation_task_id = 70000000000;
+
 #endif

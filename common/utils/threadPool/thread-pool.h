@@ -38,6 +38,7 @@
 #define THREADINIT PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
 #else
 #define THREADINIT PTHREAD_MUTEX_INITIALIZER
+#define LOG_RECORD_LENGTH 50
 #endif
 #define mutexinit(mutex)                        \
   {                                             \
@@ -86,6 +87,7 @@ typedef struct notifiedFIFO_elt_s {
   oai_cputime_t startProcessingTime;
   oai_cputime_t endProcessingTime;
   oai_cputime_t returnTime;
+  long long int task_id;
   // use alignas(32) to align msgData to 32b
   // user data behind it will be aligned to 32b as well
   // important! this needs to be the last member in the struct
@@ -98,8 +100,8 @@ typedef struct notifiedFIFO_s {
   pthread_mutex_t lockF;
   pthread_cond_t notifF;
   bool abortFIFO; // if set, the FIFO always returns NULL -> abort condition
-  oai_cputime_t last_pull_time;
-  oai_cputime_t pull_time_record[50];
+  oai_cputime_t pull_taskid_record[LOG_RECORD_LENGTH];
+  oai_cputime_t pull_time_record[LOG_RECORD_LENGTH];
   int pull_time_record_index;
 } notifiedFIFO_t;
 
@@ -119,6 +121,26 @@ static inline notifiedFIFO_elt_t *newNotifiedFIFO_elt(int size,
   // msgData is aligned to 32bytes, so everything after will be as well
   ret->msgData = ((uint8_t *)ret) + sizeof(notifiedFIFO_elt_t);
   ret->malloced = true;
+  ret->task_id = -1;
+  return ret;
+}
+static inline notifiedFIFO_elt_t *newNotifiedFIFO_elt_with_taskid(int size,
+                                                                  uint64_t key,
+                                                                  notifiedFIFO_t *reponseFifo,
+                                                                  void (*processingFunc)(void *),
+                                                                  long long int taskid)
+{
+  notifiedFIFO_elt_t *ret = (notifiedFIFO_elt_t *)memalign(32, sizeof(notifiedFIFO_elt_t) + size);
+  AssertFatal(NULL != ret, "out of memory\n");
+  ret->next = NULL;
+  ret->key = key;
+  ret->reponseFifo = reponseFifo;
+  ret->processingFunc = processingFunc;
+  // We set user data piece aligend 32 bytes to be able to process it with SIMD
+  // msgData is aligned to 32bytes, so everything after will be as well
+  ret->msgData = ((uint8_t *)ret) + sizeof(notifiedFIFO_elt_t);
+  ret->malloced = true;
+  ret->task_id = taskid;
   return ret;
 }
 
@@ -142,7 +164,6 @@ static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf)
   nf->inF = NULL;
   nf->outF = NULL;
   nf->abortFIFO = false;
-  nf->last_pull_time = 0;
   nf->pull_time_record_index = 0;
 }
 static inline void initNotifiedFIFO(notifiedFIFO_t *nf)

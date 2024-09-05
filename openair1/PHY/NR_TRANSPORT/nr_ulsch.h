@@ -80,6 +80,6 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
-NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);
+static long long int ulsch_decoding_task_id = 40000000000;
 
 #endif /* NR_ULSCH_H_ */
