@@ -35,32 +35,28 @@
 
 #include "PHY/defs_gNB.h"
 
-void nr_fill_dlsch(processingData_L1tx_t *msgTx,
-                   nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
-                   unsigned char *sdu); 
+void nr_fill_dlsch(processingData_L1tx_t *msgTx, nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu, unsigned char *sdu);
 
-void nr_generate_pdsch(processingData_L1tx_t *msgTx,
-                       int frame,
-                       int slot);
+void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot);
 
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-		      int frame,
-		      uint8_t slot,
-		      NR_DL_gNB_HARQ_t *harq,
-		      NR_DL_FRAME_PARMS* frame_parms,
-		      unsigned char * output,
-		      time_stats_t *tinput,
-		      time_stats_t *tprep,
-		      time_stats_t *tparity,
-		      time_stats_t *toutput,
-		      time_stats_t *dlsch_rate_matching_stats,
-		      time_stats_t *dlsch_interleaving_stats,
-		      time_stats_t *dlsch_segmentation_stats);
+                      int frame,
+                      uint8_t slot,
+                      NR_DL_gNB_HARQ_t *harq,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      unsigned char *output,
+                      time_stats_t *tinput,
+                      time_stats_t *tprep,
+                      time_stats_t *tparity,
+                      time_stats_t *toutput,
+                      time_stats_t *dlsch_rate_matching_stats,
+                      time_stats_t *dlsch_interleaving_stats,
+                      time_stats_t *dlsch_segmentation_stats);
 
 static long long int dlsch_coding_task_id = 10000000000;
 
 void nr_emulate_dlsch_payload(uint8_t *payload, uint16_t size);
 
-void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB);
+void dump_pdsch_stats(FILE *fd, PHY_VARS_gNB *gNB);
 
 #endif

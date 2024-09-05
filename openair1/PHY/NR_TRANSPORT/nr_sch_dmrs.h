@@ -20,15 +20,15 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_sch_dmrs.h
-* \brief
-* \author
-* \date
-* \version
-* \company Eurecom
-* \email:
-* \note
-* \warning
-*/
+ * \brief
+ * \author
+ * \date
+ * \version
+ * \company Eurecom
+ * \email:
+ * \note
+ * \warning
+ */
 
 #ifndef NR_SCH_DMRS_H
 #define NR_SCH_DMRS_H
