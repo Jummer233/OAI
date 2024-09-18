@@ -89,6 +89,11 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
 
   if (ret->task_id != -1) {
     oai_cputime_t pull_time = rdtsc_oai();
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    // double pull_time = (uint64_t)(ts.tv_sec) * 1000000 + (uint64_t)(ts.tv_nsec) / 1000;
+    double ts_pull_time = ts.tv_sec + ts.tv_nsec / 1000000000.0;
+    nf->ts_pull_time_record[nf->pull_time_record_index] = ts_pull_time;
     nf->pull_time_record[nf->pull_time_record_index] = pull_time;
     nf->pull_taskid_record[nf->pull_time_record_index++] = ret->task_id;
     // write into file if the length of array is nearly full
@@ -104,16 +109,16 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
 
       // Iterate over the array and write each element to the file
       fprintf(file,
-              "taskid: %llu \t pull time:%lu \t last pull time: %lu\n",
+              "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
               nf->pull_taskid_record[1],
-              nf->pull_time_record[1] / cpuCyclesMicroSec,
+              nf->ts_pull_time_record[1],
               (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
       for (int i = 2; i < nf->pull_time_record_index; i++) {
         // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
         fprintf(file,
-                "taskid: %llu \t pull time:%lu \t last pull time: %lu\n",
+                "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
                 nf->pull_taskid_record[i],
-                nf->pull_time_record[i] / cpuCyclesMicroSec,
+                nf->ts_pull_time_record[i],
                 (nf->pull_time_record[i] - nf->pull_time_record[i - 1]) / cpuCyclesMicroSec);
       }
 
@@ -170,6 +175,10 @@ void *one_thread(void *arg)
       break;
     }
 
+    struct timespec ts1;
+    clock_gettime(CLOCK_REALTIME, &ts1);
+    elt->ts_startProcessingTime = ts1.tv_sec + ts1.tv_nsec / 1000000000.0;
+
     if (tp->measurePerf)
       elt->startProcessingTime = rdtsc_oai();
 
@@ -178,26 +187,30 @@ void *one_thread(void *arg)
     if (tp->measurePerf)
       elt->endProcessingTime = rdtsc_oai();
 
+    struct timespec ts2;
+    clock_gettime(CLOCK_REALTIME, &ts2);
+    elt->ts_endProcessingTime = ts2.tv_sec + ts2.tv_nsec / 1000000000.0;
+
     // display record
     if (myThread->coreID != -1) {
       FILE *file = fopen("task_stamp.log", "a");
       fprintf(file,
-              "taskid: %lu"
+              "taskid: %llu"
               "\t"
-              "start processing time: %lu"
+              "start processing time: %lf"
               "\t"
-              "creation time: %lu"
+              "creation time: %lf"
               "\t"
-              "end processing time: %lu"
+              "end processing time: %lf"
               "\t"
-              "waiting time: %lu"
+              "waiting time(us): %lu"
               "\t"
-              "processing time: %lu"
+              "processing time(us): %lu"
               "\n",
               elt->task_id,
-              elt->startProcessingTime / cpuCyclesMicroSec,
-              elt->creationTime / cpuCyclesMicroSec,
-              elt->endProcessingTime / cpuCyclesMicroSec,
+              elt->ts_startProcessingTime,
+              elt->ts_creationTime,
+              elt->ts_endProcessingTime,
               (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
               (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
       fclose(file);

@@ -87,6 +87,9 @@ typedef struct notifiedFIFO_elt_s {
   oai_cputime_t startProcessingTime;
   oai_cputime_t endProcessingTime;
   oai_cputime_t returnTime;
+  double ts_creationTime;
+  double ts_startProcessingTime;
+  double ts_endProcessingTime;
   long long int task_id;
   // use alignas(32) to align msgData to 32b
   // user data behind it will be aligned to 32b as well
@@ -102,6 +105,7 @@ typedef struct notifiedFIFO_s {
   bool abortFIFO; // if set, the FIFO always returns NULL -> abort condition
   oai_cputime_t pull_taskid_record[LOG_RECORD_LENGTH];
   oai_cputime_t pull_time_record[LOG_RECORD_LENGTH];
+  double ts_pull_time_record[LOG_RECORD_LENGTH];
   int pull_time_record_index;
 } notifiedFIFO_t;
 
@@ -308,6 +312,10 @@ static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg)
 {
   if (t->measurePerf)
     msg->creationTime = rdtsc_oai();
+
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  msg->ts_creationTime = ts.tv_sec + ts.tv_nsec / 1000000000.0;
 
   if (t->activated)
     pushNotifiedFIFO(&t->incomingFifo, msg);
