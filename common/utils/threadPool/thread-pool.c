@@ -192,8 +192,34 @@ void *one_thread(void *arg)
     elt->ts_endProcessingTime = ts2.tv_sec + ts2.tv_nsec / 1000000000.0;
 
     // display record
+    FILE *file = NULL;
     if (myThread->coreID != -1) {
-      FILE *file = fopen("task_stamp.log", "a");
+      // printf("sad: %llu\n", (long long int)elt->task_id / 10000000000);
+      switch ((long long int)(elt->task_id / 10000000000)) {
+        case 1:
+          file = fopen("dlsch_coding_task_stamp.log", "a");
+          break;
+        case 2:
+          file = fopen("dlsch_coding_task_stamp.log", "a");
+          break;
+        case 3:
+          file = fopen("dlsch_coding_task_stamp.log", "a");
+          break;
+        case 4:
+          file = fopen("ulsch_decoding_task_stamp.log", "a");
+          break;
+        case 5:
+          file = fopen("ulsch_decoding_task_stamp.log", "a");
+          break;
+        case 6:
+          file = fopen("ulsch_decoding_task_stamp.log", "a");
+          break;
+        default:
+          file = fopen("ulsch_demodulation_task_stamp.log", "a");
+          break;
+      }
+
+      // FILE *file = fopen("task_stamp.log", "a");
       fprintf(file,
               "taskid: %llu"
               "\t"
@@ -302,9 +328,13 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
     }
 
     FILE *file_temp1 = fopen("queue_stamp.log", "w");
-    FILE *file_temp2 = fopen("task_stamp.log", "w");
+    FILE *file_temp2 = fopen("dlsch_coding_task_stamp.log", "w");
+    FILE *file_temp3 = fopen("ulsch_decoding_task_stamp.log", "w");
+    FILE *file_temp4 = fopen("ulsch_demodulation_task_stamp.log", "w");
     fclose(file_temp1);
     fclose(file_temp2);
+    fclose(file_temp3);
+    fclose(file_temp4);
     curptr = strtok_r(NULL, ",", &saveptr);
   }
   free(parms_cpy);
