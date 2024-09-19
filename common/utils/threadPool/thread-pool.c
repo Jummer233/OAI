@@ -214,6 +214,11 @@ void *one_thread(void *arg)
         case 4:
         case 5:
         case 6:
+          task_timing_log.ulsch_decoding.taskid_record[task_timing_log.ulsch_decoding.task_index] = elt->task_id;
+          task_timing_log.ulsch_decoding.wait_time[task_timing_log.ulsch_decoding.task_index] =
+              (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec;
+          task_timing_log.ulsch_decoding.proc_time[task_timing_log.ulsch_decoding.task_index++] =
+              (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec;
           log_file = fopen("log_file/ulsch_decoding_task_stamp.log", "a");
           break;
         default:
@@ -221,6 +226,7 @@ void *one_thread(void *arg)
           break;
       }
 
+      // dlsch_coding
       if (task_timing_log.dlsch_coding.task_index >= LOG_RECORD_LENGTH - 10) {
         // 写入log文件
         FILE *dlsch_coding_csv_file = fopen("log_file/dlsch_coding_task_stamp.csv", "a");
@@ -244,6 +250,32 @@ void *one_thread(void *arg)
         fclose(dlsch_coding_csv_file);
         // 这里不需要把数组清零，直接把下标变0即可，直接覆盖之前的数据
         task_timing_log.dlsch_coding.task_index = 0;
+      }
+
+      // ulsch_decoding
+      if (task_timing_log.ulsch_decoding.task_index >= LOG_RECORD_LENGTH - 10) {
+        // 写入log文件
+        FILE *dlsch_coding_csv_file = fopen("log_file/ulsch_decoding_task_stamp.csv", "a");
+
+        // Check if the file was successfully opened
+        if (dlsch_coding_csv_file == NULL) {
+          perror("Error opening file");
+          return 0;
+        }
+
+        for (int i = 0; i < task_timing_log.ulsch_decoding.task_index; i++) {
+          // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
+          fprintf(dlsch_coding_csv_file,
+                  "%llu, %lu, %lu\n",
+                  task_timing_log.ulsch_decoding.taskid_record[i],
+                  task_timing_log.ulsch_decoding.wait_time[i],
+                  task_timing_log.ulsch_decoding.proc_time[i]);
+        }
+
+        // Close the file
+        fclose(dlsch_coding_csv_file);
+        // 这里不需要把数组清零，直接把下标变0即可，直接覆盖之前的数据
+        task_timing_log.ulsch_decoding.task_index = 0;
       }
 
       // FILE *file = fopen("task_stamp.log", "a");
