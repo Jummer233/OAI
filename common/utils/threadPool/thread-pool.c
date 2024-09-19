@@ -107,14 +107,7 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
         return 0;
       }
 
-      // Iterate over the array and write each element to the file
-      // fprintf(queue_log_file,
-      //         "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
-      //         nf->pull_taskid_record[1],
-      //         nf->ts_pull_time_record[1],
-      //         (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
       for (int i = 1; i < nf->pull_time_record_index; i++) {
-        // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
         fprintf(queue_log_file,
                 "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
                 nf->pull_taskid_record[i],
@@ -127,13 +120,7 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
 
       // write the csv file
       FILE *queue_csv_file = fopen("log_file/queue_stamp.csv", "a");
-      // fprintf(queue_csv_file,
-      //         "%llu, %lf, %lu\n",
-      //         nf->pull_taskid_record[1],
-      //         nf->ts_pull_time_record[1],
-      //         (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
       for (int i = 1; i < nf->pull_time_record_index; i++) {
-        // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
         fprintf(queue_csv_file,
                 "%llu, %lf, %lu\n",
                 nf->pull_taskid_record[i],
@@ -244,7 +231,7 @@ void *one_thread(void *arg)
           return 0;
         }
 
-        for (int i = 0; i < LOG_RECORD_LENGTH - 10; i++) {
+        for (int i = 0; i < task_timing_log.dlsch_coding.task_index; i++) {
           // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
           fprintf(dlsch_coding_csv_file,
                   "%llu, %lu, %lu\n",
@@ -371,9 +358,11 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
     FILE *file_temp2 = fopen("log_file/dlsch_coding_task_stamp.log", "w");
     FILE *file_temp3 = fopen("log_file/ulsch_decoding_task_stamp.log", "w");
     FILE *file_temp4 = fopen("log_file/ulsch_demodulation_task_stamp.log", "w");
+    FILE *csv_file_temp1 = fopen("log_file/queue_stamp.csv", "w");
     FILE *csv_file_temp2 = fopen("log_file/dlsch_coding_task_stamp.csv", "w");
     FILE *csv_file_temp3 = fopen("log_file/ulsch_decoding_task_stamp.csv", "w");
     FILE *csv_file_temp4 = fopen("log_file/ulsch_demodulation_task_stamp.csv", "w");
+    fprintf(csv_file_temp1, "TaskID,PullTime,LastPullTime\n");
     fprintf(csv_file_temp2, "TaskID,WaitingTime,ProcessingTime\n");
     fprintf(csv_file_temp3, "TaskID,WaitingTime,ProcessingTime\n");
     fprintf(csv_file_temp4, "TaskID,WaitingTime,ProcessingTime\n");
@@ -381,6 +370,10 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
     fclose(file_temp2);
     fclose(file_temp3);
     fclose(file_temp4);
+    fclose(csv_file_temp1);
+    fclose(csv_file_temp2);
+    fclose(csv_file_temp3);
+    fclose(csv_file_temp4);
     curptr = strtok_r(NULL, ",", &saveptr);
   }
   free(parms_cpy);
