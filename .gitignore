@@ -26,3 +26,4 @@ nfapi_nr_interface_scf
 *.log
 *.out
 cmake_targets/*
+log_file

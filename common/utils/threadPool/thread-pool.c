@@ -99,12 +99,12 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
     // write into file if the length of array is nearly full
     if (nf->pull_time_record_index >= LOG_RECORD_LENGTH - 10) {
       // Open the file in write mode
-      FILE *file = fopen("queue_stamp.log", "a");
+      FILE *file = fopen("log_file/queue_stamp.log", "a");
 
       // Check if the file was successfully opened
       if (file == NULL) {
         perror("Error opening file");
-        return;
+        return 0;
       }
 
       // Iterate over the array and write each element to the file
@@ -192,7 +192,7 @@ void *one_thread(void *arg)
     elt->ts_endProcessingTime = ts2.tv_sec + ts2.tv_nsec / 1000000000.0;
 
     // display record
-    FILE *file = NULL;
+    FILE *log_file = NULL;
     if (myThread->coreID != -1) {
       // printf("sad: %llu\n", (long long int)elt->task_id / 10000000000);
       switch ((long long int)(elt->task_id / 10000000000)) {
@@ -242,7 +242,7 @@ void *one_thread(void *arg)
       }
 
       // FILE *file = fopen("task_stamp.log", "a");
-      fprintf(file,
+      fprintf(log_file,
               "taskid: %llu"
               "\t"
               "start processing time: %lf"
@@ -261,7 +261,7 @@ void *one_thread(void *arg)
               elt->ts_endProcessingTime,
               (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec,
               (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec);
-      fclose(file);
+      fclose(log_file);
 
       // printf(
       //     "taskid: %lu"
