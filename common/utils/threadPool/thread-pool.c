@@ -98,24 +98,24 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
     nf->pull_taskid_record[nf->pull_time_record_index++] = ret->task_id;
     // write into file if the length of array is nearly full
     if (nf->pull_time_record_index >= LOG_RECORD_LENGTH - 10) {
-      // Open the file in write mode
-      FILE *file = fopen("log_file/queue_stamp.log", "a");
+      // Open the log file in write mode
+      FILE *queue_log_file = fopen("log_file/queue_stamp.log", "a");
 
       // Check if the file was successfully opened
-      if (file == NULL) {
+      if (queue_log_file == NULL) {
         perror("Error opening file");
         return 0;
       }
 
       // Iterate over the array and write each element to the file
-      fprintf(file,
-              "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
-              nf->pull_taskid_record[1],
-              nf->ts_pull_time_record[1],
-              (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
-      for (int i = 2; i < nf->pull_time_record_index; i++) {
+      // fprintf(queue_log_file,
+      //         "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
+      //         nf->pull_taskid_record[1],
+      //         nf->ts_pull_time_record[1],
+      //         (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
+      for (int i = 1; i < nf->pull_time_record_index; i++) {
         // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
-        fprintf(file,
+        fprintf(queue_log_file,
                 "taskid: %llu \t pull time:%lf \t last pull time(us): %lu\n",
                 nf->pull_taskid_record[i],
                 nf->ts_pull_time_record[i],
@@ -123,10 +123,28 @@ static inline notifiedFIFO_elt_t *pullNotifiedFifoRemember_pdsch(notifiedFIFO_t 
       }
 
       // Close the file
-      fclose(file);
+      fclose(queue_log_file);
+
+      // write the csv file
+      FILE *queue_csv_file = fopen("log_file/queue_stamp.csv", "a");
+      // fprintf(queue_csv_file,
+      //         "%llu, %lf, %lu\n",
+      //         nf->pull_taskid_record[1],
+      //         nf->ts_pull_time_record[1],
+      //         (nf->pull_time_record[1] - nf->pull_time_record[0]) / cpuCyclesMicroSec);
+      for (int i = 1; i < nf->pull_time_record_index; i++) {
+        // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
+        fprintf(queue_csv_file,
+                "%llu, %lf, %lu\n",
+                nf->pull_taskid_record[i],
+                nf->ts_pull_time_record[i],
+                (nf->pull_time_record[i] - nf->pull_time_record[i - 1]) / cpuCyclesMicroSec);
+      }
+      // Close the file
+      fclose(queue_csv_file);
 
       // Clear the array by setting all elements to 0
-      memset(nf->pull_time_record, 0, sizeof(oai_cputime_t) * 50);
+      // memset(nf->pull_time_record, 0, sizeof(oai_cputime_t) * 50);
       nf->pull_time_record_index = 0;
       // 这里是为了计算差值的时候，如果清空数组不会出现计算不出差值的情况
       nf->pull_time_record[nf->pull_time_record_index] = pull_time;
