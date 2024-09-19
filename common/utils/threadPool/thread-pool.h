@@ -97,13 +97,31 @@ typedef struct notifiedFIFO_elt_s {
   alignas(32) void *msgData;
 } notifiedFIFO_elt_t;
 
+// 定义结构体来分组保存不同任务的执行和等待时间
+typedef struct {
+  long long int taskid_record[LOG_RECORD_LENGTH]; // 记录任务id
+  oai_cputime_t proc_time[LOG_RECORD_LENGTH]; // 处理时间
+  oai_cputime_t wait_time[LOG_RECORD_LENGTH]; // 等待时间
+  int task_index; // 数组下标
+} task_timing_t;
+
+// 定义一个包含所有任务的结构体
+typedef struct {
+  task_timing_t dlsch_coding;
+  task_timing_t ulsch_decoding;
+  task_timing_t ulsch_demodulation;
+} timing_log_t;
+
+/*分别保存不同任务的执行时间的list*/
+static timing_log_t task_timing_log;
+
 typedef struct notifiedFIFO_s {
   notifiedFIFO_elt_t *outF;
   notifiedFIFO_elt_t *inF;
   pthread_mutex_t lockF;
   pthread_cond_t notifF;
   bool abortFIFO; // if set, the FIFO always returns NULL -> abort condition
-  oai_cputime_t pull_taskid_record[LOG_RECORD_LENGTH];
+  long long int pull_taskid_record[LOG_RECORD_LENGTH];
   oai_cputime_t pull_time_record[LOG_RECORD_LENGTH];
   double ts_pull_time_record[LOG_RECORD_LENGTH];
   int pull_time_record_index;
@@ -169,6 +187,9 @@ static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf)
   nf->outF = NULL;
   nf->abortFIFO = false;
   nf->pull_time_record_index = 0;
+  task_timing_log.dlsch_coding.task_index = 0;
+  task_timing_log.ulsch_decoding.task_index = 0;
+  task_timing_log.ulsch_demodulation.task_index = 0;
 }
 static inline void initNotifiedFIFO(notifiedFIFO_t *nf)
 {

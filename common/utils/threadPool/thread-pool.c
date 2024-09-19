@@ -199,7 +199,12 @@ void *one_thread(void *arg)
         case 1:
         case 2:
         case 3:
-          file = fopen("dlsch_coding_task_stamp.log", "a");
+          task_timing_log.dlsch_coding.taskid_record[task_timing_log.dlsch_coding.task_index] = elt->task_id;
+          task_timing_log.dlsch_coding.wait_time[task_timing_log.dlsch_coding.task_index] =
+              (elt->startProcessingTime - elt->creationTime) / cpuCyclesMicroSec;
+          task_timing_log.dlsch_coding.proc_time[task_timing_log.dlsch_coding.task_index++] =
+              (elt->endProcessingTime - elt->startProcessingTime) / cpuCyclesMicroSec;
+          log_file = fopen("log_file/dlsch_coding_task_stamp.log", "a");
           break;
         case 4:
         case 5:
@@ -209,6 +214,31 @@ void *one_thread(void *arg)
         default:
           log_file = fopen("log_file/ulsch_demodulation_task_stamp.log", "a");
           break;
+      }
+
+      if (task_timing_log.dlsch_coding.task_index >= LOG_RECORD_LENGTH - 10) {
+        // 写入log文件
+        FILE *dlsch_coding_csv_file = fopen("log_file/dlsch_coding_task_stamp.csv", "a");
+
+        // Check if the file was successfully opened
+        if (dlsch_coding_csv_file == NULL) {
+          perror("Error opening file");
+          return 0;
+        }
+
+        for (int i = 0; i < LOG_RECORD_LENGTH - 10; i++) {
+          // fprintf(file, "taskid: %llu \t pull time:%lu\n", ret->task_id, nf->pull_time_record[i]);
+          fprintf(dlsch_coding_csv_file,
+                  "%llu, %lu, %lu\n",
+                  task_timing_log.dlsch_coding.taskid_record[i],
+                  task_timing_log.dlsch_coding.wait_time[i],
+                  task_timing_log.dlsch_coding.proc_time[i]);
+        }
+
+        // Close the file
+        fclose(dlsch_coding_csv_file);
+        // 这里不需要把数组清零，直接把下标变0即可，直接覆盖之前的数据
+        task_timing_log.dlsch_coding.task_index = 0;
       }
 
       // FILE *file = fopen("task_stamp.log", "a");
@@ -319,10 +349,16 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
         pool->nbThreads++;
     }
 
-    FILE *file_temp1 = fopen("queue_stamp.log", "w");
-    FILE *file_temp2 = fopen("dlsch_coding_task_stamp.log", "w");
-    FILE *file_temp3 = fopen("ulsch_decoding_task_stamp.log", "w");
-    FILE *file_temp4 = fopen("ulsch_demodulation_task_stamp.log", "w");
+    FILE *file_temp1 = fopen("log_file/queue_stamp.log", "w");
+    FILE *file_temp2 = fopen("log_file/dlsch_coding_task_stamp.log", "w");
+    FILE *file_temp3 = fopen("log_file/ulsch_decoding_task_stamp.log", "w");
+    FILE *file_temp4 = fopen("log_file/ulsch_demodulation_task_stamp.log", "w");
+    FILE *csv_file_temp2 = fopen("log_file/dlsch_coding_task_stamp.csv", "w");
+    FILE *csv_file_temp3 = fopen("log_file/ulsch_decoding_task_stamp.csv", "w");
+    FILE *csv_file_temp4 = fopen("log_file/ulsch_demodulation_task_stamp.csv", "w");
+    fprintf(csv_file_temp2, "TaskID,WaitingTime,ProcessingTime\n");
+    fprintf(csv_file_temp3, "TaskID,WaitingTime,ProcessingTime\n");
+    fprintf(csv_file_temp4, "TaskID,WaitingTime,ProcessingTime\n");
     fclose(file_temp1);
     fclose(file_temp2);
     fclose(file_temp3);
