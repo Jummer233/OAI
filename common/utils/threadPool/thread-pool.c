@@ -197,25 +197,17 @@ void *one_thread(void *arg)
       // printf("sad: %llu\n", (long long int)elt->task_id / 10000000000);
       switch ((long long int)(elt->task_id / 10000000000)) {
         case 1:
-          file = fopen("dlsch_coding_task_stamp.log", "a");
-          break;
         case 2:
-          file = fopen("dlsch_coding_task_stamp.log", "a");
-          break;
         case 3:
           file = fopen("dlsch_coding_task_stamp.log", "a");
           break;
         case 4:
-          file = fopen("ulsch_decoding_task_stamp.log", "a");
-          break;
         case 5:
-          file = fopen("ulsch_decoding_task_stamp.log", "a");
-          break;
         case 6:
-          file = fopen("ulsch_decoding_task_stamp.log", "a");
+          log_file = fopen("log_file/ulsch_decoding_task_stamp.log", "a");
           break;
         default:
-          file = fopen("ulsch_demodulation_task_stamp.log", "a");
+          log_file = fopen("log_file/ulsch_demodulation_task_stamp.log", "a");
           break;
       }
 
