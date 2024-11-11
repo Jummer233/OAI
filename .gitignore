@@ -25,3 +25,11 @@ tags
 nfapi_nr_interface_scf
 *.log
 *.out
+
+20240925_log_file
+20241010_log_file
+20241014_log_file
+build
+cmake_targets
+perf_fig
+log_file
