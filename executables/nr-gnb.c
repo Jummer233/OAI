@@ -98,6 +98,7 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 
 #include "executables/thread-common.h"
 #include "../../../common/utils/threadPool/thread-pool.c"
+#include "../common/utils/threadPool/thread-pool.h"
 
 // #define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials == 0 ? 0 : ts.diff / ts.trials)
@@ -365,28 +366,64 @@ void *nrL1_stats_thread(void *param)
 void *L1_thread_control(void *arg)
 {
   PHY_VARS_gNB *gNB = (PHY_VARS_gNB *)arg;
-  // tpool_t sadthread = gNB->threadPool;
-  while (oai_exit == 0) {
-    // Sleep 7 threads
-    struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
-    printf("change to 1 cpus\n");
-    for (int i = 0; i < 7 && current != NULL; i++) {
-      sleep_single_thread(gNB, i);
-      // sleepThread(current);
-      // printf("sleep thread name: %s\n", current->name);
-      // current = current->next;
+
+  // 这里是直接把任务控制在1个核，用于测试
+  // struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
+  // for (int i = 0; i < 7 && current != NULL; i++) {
+  //   sleep_single_thread(gNB, i);
+  //   // sleepThread(current);
+  //   // printf("sleep thread name: %s\n", current->name);
+  //   // current = current->next;
+  // }
+
+  // Test：这里是用于测试读取队列信息，目前已经实现
+  // 之后在while循环中读取队列，然后通过算法接口修改cpu核，然后再sleep，再读取修改
+
+  // 测试读取每种任务的执行时间
+  // while (1) {
+  //   printf("dlsch_coding proc_time: %lu\n", task_timing_log.dlsch_coding.proc_time[0]);
+  //   sleep(1);
+  // }
+  // 测试读取任务队列的出队时间
+  while (1) {
+    // printf("dlsch_coding proc_time: %lu\n", task_timing_log.dlsch_coding.proc_time[0]);
+    // printf("pull_time_record: %lu\n", gNB->threadPool.incomingFifo.pull_time_record[0]);
+    // sleep(1);
+    // 这里做一个测试，尝试获取队列的长度，每0.1秒更新一次
+    notifiedFIFO_elt_t *temp_queue = gNB->threadPool.incomingFifo.outF;
+    int cnt = 0;
+    while (temp_queue != NULL) {
+      cnt++;
+      temp_queue = temp_queue->next;
     }
-    sleep(5);
-    printf("change to 8 cpus\n");
-    current = gNB->threadPool.allthreads->pool->allthreads;
-    for (int i = 0; i < 7 && current != NULL; i++) {
-      wake_single_thread(gNB, i);
-      // wakeThread(current);
-      // printf("sleep thread name: %s\n", current->name);
-      // current = current->next;
-    }
-    sleep(5);
+    printf("queue len: %d\n", cnt);
+    sleep(1);
   }
+
+  // 这里是让cpu核周期性的改变
+
+  // while (oai_exit == 0) {
+  //   // Sleep 7 threads
+  //   struct one_thread *current = gNB->threadPool.allthreads->pool->allthreads;
+  //   printf("change to 1 cpus\n");
+  //   for (int i = 0; i < 7 && current != NULL; i++) {
+  //     sleep_single_thread(gNB, i);
+  //     // sleepThread(current);
+  //     // printf("sleep thread name: %s\n", current->name);
+  //     // current = current->next;
+  //   }
+  //   sleep(5);
+  //   printf("change to 8 cpus\n");
+  //   current = gNB->threadPool.allthreads->pool->allthreads;
+  //   for (int i = 0; i < 7 && current != NULL; i++) {
+  //     wake_single_thread(gNB, i);
+  //     // wakeThread(current);
+  //     // printf("sleep thread name: %s\n", current->name);
+  //     // current = current->next;
+  //   }
+  //   sleep(5);
+  // }
+
   return NULL;
 }
 
@@ -434,9 +471,13 @@ void init_gNB_Tpool(int inst)
   initNotifiedFIFO(&gNB->L1_rx_out);
 
   // create the RX thread responsible for RX processing start event (resp_L1 msg queue), then launch rx_func()
+  // pthread_mutex_init(&gNB->L1_rx_thread_mutex, NULL);
   threadCreate(&gNB->L1_rx_thread, L1_rx_thread, (void *)gNB, "L1_rx_thread", gNB->L1_rx_thread_core, OAI_PRIORITY_RT_MAX);
+  // threadCreate(&gNB->L1_rx_thread2, L1_rx_thread, (void *)gNB, "L1_rx_thread2", gNB->L1_rx_thread_core, OAI_PRIORITY_RT_MAX);
   // create the TX thread responsible for TX processing start event (L1_tx_out msg queue), then launch tx_func()
+  // pthread_mutex_init(&gNB->L1_tx_thread_mutex, NULL);
   threadCreate(&gNB->L1_tx_thread, L1_tx_thread, (void *)gNB, "L1_tx_thread", gNB->L1_tx_thread_core, OAI_PRIORITY_RT_MAX);
+  // threadCreate(&gNB->L1_tx_thread2, L1_tx_thread, (void *)gNB, "L1_tx_thread2", gNB->L1_tx_thread_core, OAI_PRIORITY_RT_MAX);
   // add thread of CPU_control here
   threadCreate(&gNB->L1_cpu_control_thread, L1_thread_control, (void *)gNB, "L1_thread_ctl", 8, OAI_PRIORITY_RT_MAX);
 

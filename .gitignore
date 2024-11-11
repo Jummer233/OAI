@@ -26,4 +26,10 @@ nfapi_nr_interface_scf
 *.log
 *.out
 cmake_targets/*
+
 log_file
+20240925_log_file
+20241010_log_file
+20241014_log_file
+build/*
+perf_fig

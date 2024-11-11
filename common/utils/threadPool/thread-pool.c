@@ -417,6 +417,7 @@ void initNamedTpool(char *params, tpool_t *pool, bool performanceMeas, char *nam
         pool->nbThreads++;
     }
 
+    // TODO 这里可能需要换一个地方，因为可能其他的线程启动也会调用这个函数
     FILE *file_temp1 = fopen("log_file/queue_stamp.log", "w");
     FILE *file_temp2 = fopen("log_file/dlsch_coding_task_stamp.log", "w");
     FILE *file_temp3 = fopen("log_file/ulsch_decoding_task_stamp.log", "w");
